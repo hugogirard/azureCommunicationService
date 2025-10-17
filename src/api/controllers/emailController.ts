@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import EmailService, { } from '../services/emailServices.js'
 import BaseController from './baseController.js';
+import { EmailMessage } from '@azure/communication-email';
+import config from '../config.js';
 
 /**
  * @swagger
@@ -20,7 +22,7 @@ export default class EmailController extends BaseController {
     initialize(): Router {
         /**
          * @swagger
-         * /api/email/send:
+         * /api/email:
          *   post:
          *     summary: Send an email
          *     tags: [Email]
@@ -31,11 +33,9 @@ export default class EmailController extends BaseController {
          *           schema:
          *             $ref: '#/components/schemas/EmailMessage'
          *           example:
-         *             senderAddress: "DoNotReply@email.hugogirard.net"
          *             recipients:
          *               to:
          *                 - address: "recipient@example.com"
-         *                   displayName: "Recipient Name"
          *             subject: "Test Email from Azure Communication Services"
          *             content:
          *               plainText: "This is a test email"
@@ -57,9 +57,21 @@ export default class EmailController extends BaseController {
         return this._router;
     }
 
-    async sendEmail(req: Request, res: Response) {
+    async sendEmail(req: Request, res: Response): Promise<void> {
         try {
-            res.json('hello world');
+            const body = req.body;
+            // Transform the request to match Azure Communication Services format
+            const message: EmailMessage = {
+                senderAddress: config.sender,
+                content: {
+                    subject: body.subject,
+                    plainText: body.content?.plainText,
+                    html: body.content?.html
+                },
+                recipients: body.recipients
+            };
+            const messageId = await this._emailService.sendEmailMessage(message);
+            res.json({ messageId });
         } catch (error: any) {
             console.log(`Error in sending email: ${error.message}`)
             res.status(500).json({ error: 'Internal Server error' });

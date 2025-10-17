@@ -7,6 +7,9 @@ import { swaggerSpec } from './openapi.js';
 const app = express();
 const port = config.port;
 
+// Add JSON body parser middleware
+app.use(express.json());
+
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
