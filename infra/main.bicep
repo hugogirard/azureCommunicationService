@@ -77,3 +77,47 @@ module dnsDomain 'br/public:avm/res/network/dns-zone:0.5.4' = if (createPublicAz
     name: domainName
   }
 }
+
+module cosmosdb 'br/public:avm/res/document-db/database-account:0.12.0' = {
+  scope: rg
+  params: {
+    tags: {
+      SecurityControl: 'Ignore'
+    }
+    name: 'cos${replace(suffix,'-','')}'
+    location: location
+    enableMultipleWriteLocations: false
+    automaticFailover: false
+    disableLocalAuth: true
+    networkRestrictions: {
+      publicNetworkAccess: 'Enabled'
+    }
+    defaultConsistencyLevel: 'Session'
+    locations: [
+      {
+        failoverPriority: 0
+        isZoneRedundant: false
+        locationName: location
+      }
+    ]
+    sqlDatabases: [
+      {
+        name: 'email'
+        containers: [
+          {
+            name: 'message'
+            indexingPolicy: {
+              automatic: true
+            }
+            paths: [
+              '/username'
+            ]
+            kind: 'MultiHash'
+          }
+        ]
+        throughput: 1000
+        autoscaleSettingsMaxThroughput: 1000
+      }
+    ]
+  }
+}
