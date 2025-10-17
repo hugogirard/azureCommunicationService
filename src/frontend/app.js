@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup form handler
     setupFormHandler();
+    
+    // Setup clear history button
+    setupClearHistoryButton();
 });
 
 // Rich Text Editor
@@ -87,6 +90,34 @@ function setupFormHandler() {
     
     resetBtn.addEventListener('click', function() {
         quill.setContents([]);
+    });
+}
+
+// Clear History Button Handler
+function setupClearHistoryButton() {
+    const clearBtn = document.getElementById('clear-history-btn');
+    const confirmBtn = document.getElementById('confirm-clear-btn');
+    const clearModal = document.getElementById('clear-confirm-modal');
+    
+    clearBtn.addEventListener('click', function() {
+        // Open confirmation modal
+        const modalInstance = M.Modal.getInstance(clearModal);
+        modalInstance.open();
+    });
+    
+    confirmBtn.addEventListener('click', function() {
+        // Clear all messages from local storage
+        localStorage.removeItem('emailMessages');
+        
+        // Reload the message history display
+        loadMessageHistory();
+        
+        // Show success message
+        M.toast({
+            html: '<i class="material-icons left">delete_sweep</i>All messages cleared successfully!',
+            classes: 'green',
+            displayLength: 3000
+        });
     });
 }
 
@@ -193,6 +224,7 @@ function getMessageHistory() {
 function loadMessageHistory() {
     const messages = getMessageHistory();
     const messagesList = document.getElementById('messages-list');
+    const clearBtn = document.getElementById('clear-history-btn');
     
     if (messages.length === 0) {
         messagesList.innerHTML = `
@@ -201,7 +233,16 @@ function loadMessageHistory() {
                 <p>No messages sent yet</p>
             </div>
         `;
+        // Hide clear button when no messages
+        if (clearBtn) {
+            clearBtn.style.display = 'none';
+        }
         return;
+    }
+    
+    // Show clear button when there are messages
+    if (clearBtn) {
+        clearBtn.style.display = 'inline-flex';
     }
     
     messagesList.innerHTML = messages.map(message => {
@@ -216,6 +257,7 @@ function loadMessageHistory() {
                     <div class="message-id">
                         <i class="material-icons tiny">fingerprint</i>
                         ID: ${displayId}
+                        <i class="material-icons tiny copy-icon" data-copy="${escapeHtml(messageIdForData)}" data-copy-format="json" title="Copy message ID in JSON format">content_copy</i>
                     </div>
                 </div>
                 <div class="message-timestamp">
@@ -243,9 +285,24 @@ function loadMessageHistory() {
     // Attach click event listeners to message items
     const messageItems = messagesList.querySelectorAll('.message-item');
     messageItems.forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            // Don't trigger if clicking on copy icon
+            if (e.target.classList.contains('copy-icon')) {
+                return;
+            }
             const messageId = this.getAttribute('data-message-id');
             checkEmailStatus(messageId);
+        });
+    });
+    
+    // Attach copy to clipboard functionality
+    const copyIcons = messagesList.querySelectorAll('.copy-icon');
+    copyIcons.forEach(icon => {
+        icon.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent triggering message item click
+            const textToCopy = this.getAttribute('data-copy');
+            const format = this.getAttribute('data-copy-format');
+            copyToClipboard(textToCopy, format === 'json');
         });
     });
 }
@@ -307,62 +364,53 @@ async function checkEmailStatus(messageId) {
         
         const status = await response.json();
         
-        // Update status in local storage
-        updateMessageStatus(messageId, status.status);
+        // Update status in local storage based on the response
+        if (status.status) {
+            updateMessageStatus(messageId, status.status);
+        }
         
-        // Display status details with better formatting
+        // Display the raw API response with better formatting
         statusDetails.innerHTML = `
             <div class="status-container">
                 <div class="status-header">
                     <i class="material-icons ${getStatusIcon(status.status)}">
                         ${getStatusIconName(status.status)}
                     </i>
-                    <h5>${status.status}</h5>
+                    <h5>Email Status Response</h5>
+                </div>
+                
+                <div class="status-section">
+                    <div class="status-row column">
+                        <span class="status-label">
+                            <i class="material-icons tiny">code</i> API Response
+                        </span>
+                        <div class="api-response-box">
+                            <div class="response-header">
+                                <span>JSON Response</span>
+                                <i class="material-icons tiny copy-icon-response" data-copy="${escapeHtml(JSON.stringify(status))}" title="Copy response">content_copy</i>
+                            </div>
+                            <pre><code>${JSON.stringify(status, null, 2)}</code></pre>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="status-section">
                     <div class="status-row">
                         <span class="status-label">
-                            <i class="material-icons tiny">fingerprint</i> Message ID
+                            <i class="material-icons tiny">fingerprint</i> Operation ID
                         </span>
-                        <span class="status-value monospace">${messageId}</span>
+                        <span class="status-value monospace">${status.id || 'N/A'}</span>
                     </div>
                 </div>
                 
-                ${status.recipient ? `
-                    <div class="status-section">
-                        <div class="status-row">
-                            <span class="status-label">
-                                <i class="material-icons tiny">email</i> Recipient
-                            </span>
-                            <span class="status-value">${status.recipient}</span>
-                        </div>
+                <div class="status-section">
+                    <div class="status-row">
+                        <span class="status-label">
+                            <i class="material-icons tiny">info</i> Status
+                        </span>
+                        <span class="status-badge ${getStatusClass(status.status)}">${status.status || 'Unknown'}</span>
                     </div>
-                ` : ''}
-                
-                ${status.sender ? `
-                    <div class="status-section">
-                        <div class="status-row">
-                            <span class="status-label">
-                                <i class="material-icons tiny">person</i> Sender
-                            </span>
-                            <span class="status-value">${status.sender}</span>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${status.statusDetails ? `
-                    <div class="status-section">
-                        <div class="status-row column">
-                            <span class="status-label">
-                                <i class="material-icons tiny">info</i> Details
-                            </span>
-                            <div class="status-details-box">
-                                ${formatStatusDetails(status.statusDetails)}
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
+                </div>
                 
                 ${status.error ? `
                     <div class="status-section error">
@@ -374,8 +422,39 @@ async function checkEmailStatus(messageId) {
                         </div>
                     </div>
                 ` : ''}
+                
+                <div class="status-section">
+                    <div class="status-row">
+                        <span class="status-label">
+                            <i class="material-icons tiny">fingerprint</i> Message ID (Request)
+                        </span>
+                        <span class="status-value monospace">
+                            ${getDisplayId(messageId)}
+                            <i class="material-icons tiny copy-icon-modal" data-copy="${escapeHtml(messageIdPayload)}" data-copy-format="json" title="Copy message ID in JSON format">content_copy</i>
+                        </span>
+                    </div>
+                </div>
             </div>
         `;
+        
+        // Attach copy to clipboard functionality in modal
+        const modalCopyIcon = statusDetails.querySelector('.copy-icon-modal');
+        if (modalCopyIcon) {
+            modalCopyIcon.addEventListener('click', function() {
+                const textToCopy = this.getAttribute('data-copy');
+                const format = this.getAttribute('data-copy-format');
+                copyToClipboard(textToCopy, format === 'json');
+            });
+        }
+        
+        // Attach copy functionality for response
+        const responseCopyIcon = statusDetails.querySelector('.copy-icon-response');
+        if (responseCopyIcon) {
+            responseCopyIcon.addEventListener('click', function() {
+                const textToCopy = this.getAttribute('data-copy');
+                copyToClipboard(textToCopy, false);
+            });
+        }
         
         // Refresh the message list to show updated status
         loadMessageHistory();
@@ -430,11 +509,11 @@ function getStatusIconName(status) {
     
     const statusLower = status.toLowerCase();
     
-    if (statusLower.includes('delivered') || statusLower.includes('sent')) {
+    if (statusLower.includes('delivered') || statusLower.includes('sent') || statusLower.includes('succeeded')) {
         return 'check_circle';
     } else if (statusLower.includes('failed') || statusLower.includes('error')) {
         return 'error';
-    } else if (statusLower.includes('queued') || statusLower.includes('out for delivery')) {
+    } else if (statusLower.includes('queued') || statusLower.includes('out for delivery') || statusLower.includes('running')) {
         return 'schedule';
     }
     
@@ -447,11 +526,11 @@ function getStatusIcon(status) {
     
     const statusLower = status.toLowerCase();
     
-    if (statusLower.includes('delivered') || statusLower.includes('sent')) {
+    if (statusLower.includes('delivered') || statusLower.includes('sent') || statusLower.includes('succeeded')) {
         return 'green-text';
     } else if (statusLower.includes('failed') || statusLower.includes('error')) {
         return 'red-text';
-    } else if (statusLower.includes('queued') || statusLower.includes('out for delivery')) {
+    } else if (statusLower.includes('queued') || statusLower.includes('out for delivery') || statusLower.includes('running')) {
         return 'orange-text';
     }
     
@@ -496,9 +575,9 @@ function getStatusClass(status) {
     
     const statusLower = status.toLowerCase();
     
-    if (statusLower.includes('queued') || statusLower.includes('out for delivery')) {
+    if (statusLower.includes('queued') || statusLower.includes('out for delivery') || statusLower.includes('running')) {
         return 'pending';
-    } else if (statusLower.includes('delivered') || statusLower.includes('sent')) {
+    } else if (statusLower.includes('delivered') || statusLower.includes('sent') || statusLower.includes('succeeded')) {
         return 'sent';
     } else if (statusLower.includes('failed') || statusLower.includes('error')) {
         return 'failed';
@@ -548,4 +627,50 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Copy text to clipboard
+async function copyToClipboard(text, wrapInJson = false) {
+    let textToCopy = text;
+    
+    // Wrap in JSON format if requested
+    if (wrapInJson) {
+        const jsonPayload = {
+            messageId: text
+        };
+        textToCopy = JSON.stringify(jsonPayload, null, 2);
+    }
+    
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        M.toast({
+            html: '<i class="material-icons left">check</i>Message ID copied to clipboard!',
+            classes: 'green',
+            displayLength: 2000
+        });
+    } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            M.toast({
+                html: '<i class="material-icons left">check</i>Message ID copied to clipboard!',
+                classes: 'green',
+                displayLength: 2000
+            });
+        } catch (err2) {
+            console.error('Failed to copy:', err2);
+            M.toast({
+                html: '<i class="material-icons left">error</i>Failed to copy to clipboard',
+                classes: 'red',
+                displayLength: 3000
+            });
+        }
+        document.body.removeChild(textArea);
+    }
 }

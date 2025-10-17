@@ -95,7 +95,13 @@
         <div id="history-view" class="view">
             <div class="row">
                 <div class="col s12">
-                    <h4 class="page-title">Message History</h4>
+                    <div class="history-header">
+                        <h4 class="page-title">Message History</h4>
+                        <button class="btn waves-effect waves-light red darken-1" id="clear-history-btn">
+                            <i class="material-icons left">delete_sweep</i>
+                            Clear All
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -136,6 +142,19 @@
         </div>
         <div class="modal-footer">
             <a href="#!" class="modal-close waves-effect waves-blue btn-flat">Close</a>
+        </div>
+    </div>
+
+    <!-- Clear History Confirmation Modal -->
+    <div id="clear-confirm-modal" class="modal">
+        <div class="modal-content">
+            <h4><i class="material-icons left red-text">warning</i>Clear Message History</h4>
+            <p>Are you sure you want to delete all message history? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-blue btn-flat">Cancel</a>
+            <a href="#!" class="modal-close waves-effect waves-red btn-flat red-text" id="confirm-clear-btn">Clear
+                All</a>
         </div>
     </div>
 
