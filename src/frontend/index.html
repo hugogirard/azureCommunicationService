@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Communication Service - Email Manager</title>
+
+    <!-- Material Design CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="blue darken-2">
+        <div class="nav-wrapper container">
+            <a href="#!" class="brand-logo">
+                <i class="material-icons">email</i>
+                Email Manager
+            </a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="#send" class="nav-link active" data-view="send">
+                        <i class="material-icons left">send</i>Send Email
+                    </a></li>
+                <li><a href="#history" class="nav-link" data-view="history">
+                        <i class="material-icons left">history</i>Message History
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Send Email View -->
+        <div id="send-view" class="view active">
+            <div class="row">
+                <div class="col s12">
+                    <h4 class="page-title">Send New Email</h4>
+                </div>
+            </div>
+
+            <div class="row">
+                <form class="col s12" id="email-form">
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="row">
+                                <div class="input-field col s12">
+                                    <i class="material-icons prefix">mail_outline</i>
+                                    <input id="recipient-email" type="email" class="validate" required>
+                                    <label for="recipient-email">Recipient Email Address</label>
+                                    <span class="helper-text" data-error="Please enter a valid email"></span>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="input-field col s12">
+                                    <i class="material-icons prefix">subject</i>
+                                    <input id="email-subject" type="text" class="validate" required>
+                                    <label for="email-subject">Subject</label>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col s12">
+                                    <label class="editor-label">Message Content</label>
+                                    <div id="editor-container"></div>
+                                    <input type="hidden" id="email-content" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-action">
+                            <button class="btn waves-effect waves-light blue darken-2" type="submit">
+                                <i class="material-icons left">send</i>
+                                Send Email
+                            </button>
+                            <button class="btn waves-effect waves-light grey" type="reset" id="reset-btn">
+                                <i class="material-icons left">clear</i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Message History View -->
+        <div id="history-view" class="view">
+            <div class="row">
+                <div class="col s12">
+                    <h4 class="page-title">Message History</h4>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col s12">
+                    <div class="card">
+                        <div class="card-content">
+                            <div id="messages-list">
+                                <p class="center-align grey-text">No messages sent yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="status-modal" class="modal">
+        <div class="modal-content">
+            <h4><i class="material-icons left">info</i>Email Status</h4>
+            <div id="status-details">
+                <div class="preloader-wrapper small active">
+                    <div class="spinner-layer spinner-blue-only">
+                        <div class="circle-clipper left">
+                            <div class="circle"></div>
+                        </div>
+                        <div class="gap-patch">
+                            <div class="circle"></div>
+                        </div>
+                        <div class="circle-clipper right">
+                            <div class="circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <p>Loading status...</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-blue btn-flat">Close</a>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Materialize JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <!-- Quill Rich Text Editor -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+
+</html>
