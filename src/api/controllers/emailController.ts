@@ -54,6 +54,29 @@ export default class EmailController extends BaseController {
          */
         this._router.post('/', this.sendEmail.bind(this));
 
+        /**
+          * @swagger
+          * /api/email/status:
+          *   post:
+          *     summary: Get email status
+          *     tags: [Email]
+          *     requestBody:
+          *       required: true
+          *       content:
+          *         application/json:
+          *           schema:
+          *             type: object
+          *             properties:
+          *               messageId:
+          *                 type: string
+          *     responses:
+          *       200:
+          *         description: Email status retrieved successfully
+          *       500:
+          *         description: Server error
+          */
+        this._router.post('/status', this.getStatus.bind(this));
+
         return this._router;
     }
 
@@ -75,6 +98,20 @@ export default class EmailController extends BaseController {
         } catch (error: any) {
             console.log(`Error in sending email: ${error.message}`)
             res.status(500).json({ error: 'Internal Server error' });
+        }
+    }
+
+    async getStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const { messageId } = req.body;
+            if (!messageId) {
+                res.status(400).json({ error: 'messageId is required' });
+                return;
+            }
+            const status = await this._emailService.getStatusEmail(messageId);
+            res.json(status);
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to get email status' });
         }
     }
 }
