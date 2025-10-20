@@ -28,16 +28,16 @@ module loganalytics 'br/public:avm/res/operational-insights/workspace:0.11.1' = 
   }
 }
 
-module registry 'br/public:avm/res/container-registry/registry:0.9.1' = {
-  scope: rg
-  params: {
-    name: 'acr${suffix}'
-    location: location
-    acrAdminUserEnabled: true
-    acrSku: 'Standard'
-    publicNetworkAccess: 'Enabled'
-  }
-}
+// module registry 'br/public:avm/res/container-registry/registry:0.9.1' = {
+//   scope: rg
+//   params: {
+//     name: 'acr${suffix}'
+//     location: location
+//     acrAdminUserEnabled: true
+//     acrSku: 'Standard'
+//     publicNetworkAccess: 'Enabled'
+//   }
+// }
 
 module serverfarm 'br/public:avm/res/web/serverfarm:0.5.0' = {
   scope: rg
@@ -78,46 +78,17 @@ module dnsDomain 'br/public:avm/res/network/dns-zone:0.5.4' = if (createPublicAz
   }
 }
 
-module cosmosdb 'br/public:avm/res/document-db/database-account:0.12.0' = {
+module eventViewer 'br/public:avm/res/web/site:0.19.3' = {
   scope: rg
   params: {
-    tags: {
-      SecurityControl: 'Ignore'
+    name: 'viewer-${suffix}'
+    kind: 'app,linux'
+    serverFarmResourceId: serverfarm.outputs.resourceId
+    httpsOnly: true
+    siteConfig: {
+      alwaysOn: true
+      linuxFxVersion: 'DOTNETCORE|8.0'
     }
-    name: 'cos${replace(suffix,'-','')}'
-    location: location
-    enableMultipleWriteLocations: false
-    automaticFailover: false
-    disableLocalAuth: true
-    networkRestrictions: {
-      publicNetworkAccess: 'Enabled'
-    }
-    defaultConsistencyLevel: 'Session'
-    locations: [
-      {
-        failoverPriority: 0
-        isZoneRedundant: false
-        locationName: location
-      }
-    ]
-    sqlDatabases: [
-      {
-        name: 'email'
-        containers: [
-          {
-            name: 'message'
-            indexingPolicy: {
-              automatic: true
-            }
-            paths: [
-              '/username'
-            ]
-            kind: 'MultiHash'
-          }
-        ]
-        throughput: 1000
-        autoscaleSettingsMaxThroughput: 1000
-      }
-    ]
+    publicNetworkAccess: 'Enabled'
   }
 }
